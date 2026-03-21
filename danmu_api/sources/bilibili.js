@@ -425,7 +425,7 @@ export default class BilibiliSource extends BaseSource {
     return [];
   }
 
-  async handleAnimes(sourceAnimes, queryTitle, curAnimes) {
+  async handleAnimes(sourceAnimes, queryTitle, curAnimes, detailStore = null) {
     const tmpAnimes = [];
 
     // 添加错误处理，确保sourceAnimes是数组
@@ -538,7 +538,7 @@ export default class BilibiliSource extends BaseSource {
           };
 
           tmpAnimes.push(transformedAnime);
-          addAnime({ ...transformedAnime, links });
+          addAnime({ ...transformedAnime, links }, detailStore);
 
           if (globals.animes.length > globals.MAX_ANIMES) {
             removeEarliestAnime();
@@ -800,7 +800,7 @@ export default class BilibiliSource extends BaseSource {
     }
 
     // 计算视频的分片数量
-    const maxLen = (duration > 0) ? (Math.floor(duration / 360) + 1) : 36;
+    const maxLen = (duration > 0) ? Math.ceil(duration / 360) : 36;
     log("info", `maxLen: ${maxLen}`);
 
     const segmentList = [];
@@ -815,13 +815,14 @@ export default class BilibiliSource extends BaseSource {
       segmentList.push({
         "type": "bilibili1",
         "segment_start": i * 360,
-        "segment_end": (i + 1) * 360,
+        "segment_end": duration > 0 ? Math.min((i + 1) * 360, duration) : (i + 1) * 360,
         "url": danmakuUrl
       });
     }
 
     return new SegmentListResponse({
       "type": "bilibili1",
+      "duration": duration > 0 ? duration : 0,
       "segmentList": segmentList
     });
   }
